@@ -153,24 +153,25 @@ final class ModernizerClassVisitor extends ClassVisitor {
     private void checkToken(String token, Collection<Violation> v, String name,
             int lineNumber) {
         if (v != null && !exclusions.contains(token)) {
+            if (ignoreClass()) {
+                return;
+            }
+            for (Pattern pattern : exclusionPatterns) {
+                if (pattern.matcher(token).matches()) {
+                    return;
+                }
+            }
+            for (String prefix : ignorePackages) {
+                if (packageName.startsWith(prefix + ".")) {
+                    return;
+                }
+            }
+
             for (Violation violation : v) {
                 if (javaVersion >= violation.getVersion() &&
                         (!violation.getUntil().isPresent() ||
                         javaVersion < violation.getUntil().getAsInt()) &&
                         !ignorePackages.contains(packageName)) {
-                    if (ignoreClass()) {
-                        return;
-                    }
-                    for (Pattern pattern : exclusionPatterns) {
-                        if (pattern.matcher(token).matches()) {
-                            return;
-                        }
-                    }
-                    for (String prefix : ignorePackages) {
-                        if (packageName.startsWith(prefix + ".")) {
-                            return;
-                        }
-                    }
                     occurrences.add(new ViolationOccurrence(name, lineNumber,
                             violation));
                 }
